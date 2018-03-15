@@ -42,12 +42,11 @@ Standard.train.Pred <- scale(train.Predictors)
 
 Standard.test.Pred <- scale(test.Predictors)
 
-# We use 47 neighbors, this was the number of neighbors that cross-validation said had the lowest
-# average error-rate. 
-knn.pred<-knn(Standard.train.Pred,Standard.test.Pred,train.Outcome,k=47)
+# We use 11 neighbors
+knn.pred<-knn(Standard.train.Pred,Standard.test.Pred,train.Outcome,k=11)
 
 # Calculate the error-rate for the test year 2017, this is output to the console
-print("The algorithm failed to correctly predict " + toString(sum(knn.pred!=test.ActualOutcome)/32*100) + "% of the 2017 first round games.")
+print(paste("The algorithm failed to correctly predict ",toString(sum(knn.pred!=test.ActualOutcome)/32*100),"% of the 2017 first round games."))
 
 ### Now we will predict for the 2018 games ###
 
@@ -55,7 +54,7 @@ print("The algorithm failed to correctly predict " + toString(sum(knn.pred!=test
 EightTeenData <- read.csv(insertDataFileLocationHere)
 
 # Set Up The Data
-Model18Data <- EightTeenData[,c("year","SeedType","Upset","TopSeed","TopTravel","TopGames","TopPTs","TopOppPTS","TopTOV","TopTOPer","TopSOS","BotSeed","BotTravel","BotGames","BotPTs","BotOppPTS","BotTOV","BotTOPer","BotSOS")]
+Model18Data <- EightTeenData[,c("SeedType","TopSeed","TopTravel","TopGames","TopPTs","TopOppPTS","TopTOV","TopTOPer","TopSOS","BotSeed","BotTravel","BotGames","BotPTs","BotOppPTS","BotTOV","BotTOPer","BotSOS")]
 
 # We need to eliminate entries with missing data
 Model18Data <- Model18Data[Model18Data$BotTOPer>0,]
@@ -71,6 +70,7 @@ EightTeen.Predictors <- Model18Data[-train,c("TopTravel","TopPTDiff","TopTOPer",
 Standard.18.Pred <- scale(EightTeen.Predictors)
 
 # Get the upset predictions, outputs are 0s and 1s
-knn.18.pred <- knn(Standard.train.Pred,Standard.18.Pred,train.Outcome,k=47)
-UpsetPredictions <- data.frame("Region"=Model18Data$Region,"SeedType"=Model18Data$SeedType,"TopSeed"=Model18Data$TopSeed,"BotSeed"=Model18Data$BotSeed,"Upset"=knn.18.pred)
-
+knn.18.pred <- knn(Standard.train.Pred,Standard.18.Pred,train.Outcome,k=11)
+UpsetPredictions <- Model18Data[,c("SeedType","TopSeed","BotSeed")]
+UpsetPredictions$Prediction<-knn.18.pred
+UpsetPredictions
