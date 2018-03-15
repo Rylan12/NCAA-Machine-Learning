@@ -84,7 +84,7 @@ def make_model(col_labels = None, year = 2017, model_type = None):
         proba.append(predictions[i][1]) # second column is upset percentage
 
     test_results['UpsetProba'] = proba
-    test_results = test_results.sort('UpsetProba', ascending = 0)
+    # May need to change sort to sort_values depending on your python version
+    test_results = test_results.sort('UpsetProba', ascending = 0) 
 
     print(test_results)
-
