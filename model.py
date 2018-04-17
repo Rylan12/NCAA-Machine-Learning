@@ -9,9 +9,11 @@ from sklearn.ensemble import GradientBoostingClassifier as gbc
 from sklearn.svm import SVC as svc
 from sklearn.preprocessing import scale, OneHotEncoder
 
+pd.options.display.width = 80
+
 def make_model(col_labels = None, year = 2017, model_type = None):
     """make and run model"""
-
+    print('Year: %d' % (year))
     data = pd.read_csv('NCAA2001_2017.csv')
     data_2018 = pd.read_csv('NCAA2018.csv')
     data_2018['year'] = 2018
@@ -49,15 +51,23 @@ def make_model(col_labels = None, year = 2017, model_type = None):
                 'SevenTen', 'EightNine'],
             [1, 2, 3, 4, 5, 6, 7, 8])
 
+    # collect data from correct year and columns
+    # training set inputs
     train = data.loc[(data['year'] != year) & \
             (data['year'] != 2018)][col_labels]
+
+    # create training set answers
+    # training set outputs
     train_results = data.loc[(data['year'] != year) & \
             (data['year'] != 2018)]['Upset'] # not a df
 
+    # current input set
     test = data.loc[data['year'] == year][col_labels]
+    # results to display
     results_columns = ['SeedType', 'TopSeed', 'BotSeed', 'Upset']
     test_results = data.loc[data['year'] == year][results_columns]
 
+##########
     # have to one-hot the seeding type if that's in there
     if 'SeedType' in col_labels:
         enc = OneHotEncoder(categorical_features = [0]) # must be first
@@ -67,7 +77,7 @@ def make_model(col_labels = None, year = 2017, model_type = None):
         train = train.as_matrix()
         test = test.as_matrix()
 
-    # making the model
+    # choose model type
     if model_type == "forest":
         model = rf()
     elif model_type == "gbc":
@@ -76,15 +86,22 @@ def make_model(col_labels = None, year = 2017, model_type = None):
         model = svc(probability = True)
     else:
         model = lm.LogisticRegression()
+
+    # fit data to model (train)
     model.fit(train, train_results.as_matrix())
 
+    # create predictions
     predictions = model.predict_proba(test)
+
+    # add probability to display output
     proba = []
     for i in range(len(predictions)):
         proba.append(predictions[i][1]) # second column is upset percentage
-
     test_results['UpsetProba'] = proba
-    # May need to change sort to sort_values depending on your python version
-    test_results = test_results.sort('UpsetProba', ascending = 0) 
-
+    
+    # Sort and output predicitons
+    test_results = test_results.sort_values('UpsetProba', ascending = 0)
     print(test_results)
+
+if __name__ == '__main__':
+    make_model()
