@@ -6,7 +6,7 @@ library(class)
 
 
 # Read in the NCAA2001_2017 data file
-PastData <- read.csv(insertDataFileLocationHere)
+PastData <- read.csv("/Users/rylanpolster/PycharmProjects/NCAA-Machine-Learning/NCAA2001_2017.csv")
 
 
 
@@ -51,7 +51,7 @@ print(paste("The algorithm failed to correctly predict ",toString(sum(knn.pred!=
 ### Now we will predict for the 2018 games ###
 
 # Load in the data from 2018
-EightTeenData <- read.csv(insertDataFileLocationHere)
+EightTeenData <- read.csv("/Users/rylanpolster/PycharmProjects/NCAA-Machine-Learning/NCAA2018.csv")
 
 # Set Up The Data
 Model18Data <- EightTeenData[,c("SeedType","TopSeed","TopTravel","TopGames","TopPTs","TopOppPTS","TopTOV","TopTOPer","TopSOS","BotSeed","BotTravel","BotGames","BotPTs","BotOppPTS","BotTOV","BotTOPer","BotSOS")]
@@ -73,4 +73,5 @@ Standard.18.Pred <- scale(EightTeen.Predictors)
 knn.18.pred <- knn(Standard.train.Pred,Standard.18.Pred,train.Outcome,k=11)
 UpsetPredictions <- Model18Data[,c("SeedType","TopSeed","BotSeed")]
 UpsetPredictions$Prediction<-knn.18.pred
+print("Reached Point")
 UpsetPredictions

@@ -2,7 +2,7 @@
 #### Created February 2018
 #### by Kevin Nowland and Matthew Osborne
 
-In this repository is python code used to scrape 2001-2017 ncaa first round tournament data from https://www.sports-reference.com/cbb/. Descriptions of the basketball statistics can be found on that site. Additionaly, we have included the data file we managed to scrape and then clean for our purposes. The variables in this csv file can be found below.
+In this repository is python code used to scrape 2001-2017 ncaa first round tournament data from https://www.sports-reference.com/cbb/. Descriptions of the basketball statistics can be found on that site. Additionally, we have included the data file we managed to scrape and then clean for our purposes. The variables in this csv file can be found below.
 
 Variable description for NCAA2001_2017.csv
 ----------------------------------------------------------------
@@ -10,7 +10,7 @@ year - This is the year that the tournament took place, values 2001-2017
 
 SeedType - This is the seeding of the game. For example, OneSixteen  means it was the 1st seed vs the 16th seed.
 
-Upset - This variable indicates whether or not this game was an upset. Meaning the lower seed beat the higher seed. 0 indicates no upset occured, 1 indicates an upset occured
+Upset - This variable indicates whether or not this game was an upset. Meaning the lower seed beat the higher seed. 0 indicates no upset occurred, 1 indicates an upset occurred
 
 Region - The bracket is broken into four regions every year. This variable tracks which of the four regions the game took place in. 
 
