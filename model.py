@@ -45,8 +45,18 @@ columns.remove('BotOppPTS')
 pd.options.display.width = 100
 
 
-def predict(year=2017, model='model', new=True, col_labels=None, model_type=None):
-    """Train machine learning model for use"""
+def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels: list = None,
+            model_type: str = None) -> None:
+    """
+    Train machine learning model for use
+
+    :param year: Year to run predictions for
+    :param model: Model name
+    :param new: Whether or not to create and train a new model
+    :param col_labels: Columns to include in analysis
+    :param model_type: Type of model to use ('forest', 'gbc', 'svm', or None for logistic regression)
+    :returns: None
+    """
 
     # Initialize Data
     data = pd.read_csv('NCAA2001_2017.csv')
