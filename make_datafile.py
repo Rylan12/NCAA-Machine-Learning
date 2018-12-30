@@ -915,7 +915,7 @@ def make_yearfile(year):
     f.close()
     logging.info("make_yearfile: exiting")
 
-# Uncomment the below lines to write csv files for all years 2001-2017
 
-# for year in range(2001, 2018, 1):
-#    make_yearfile(year)
+# Uncomment the below lines to write csv files for all years 2001-2017
+for year in range(2001, 2002, 1):
+    make_yearfile(year)

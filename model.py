@@ -1,6 +1,8 @@
 """
 Make a model to predict upsets
 """
+import sys
+import warnings
 import numpy as np
 import pickle
 import pandas as pd
@@ -10,56 +12,55 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.preprocessing import scale, OneHotEncoder
 
+# Ignore warnings
+if not sys.warnoptions:
+    warnings.simplefilter("default")
+    warnings.simplefilter("ignore", category=FutureWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
+    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+
+# Open columns
 with open('columns.pickle', 'rb') as column_file:
     columns = pickle.load(column_file)
+
 columns.remove('TopScore')
 columns.remove('BotScore')
-
 columns.remove('TopTOV')
 columns.remove('BotTOV')
-
 columns.remove('TopTOPer')
 columns.remove('BotTOPer')
-
 columns.remove('TopTSPer')
 columns.remove('BotTSPer')
-
 columns.remove('TopFT')
 columns.remove('BotFT')
-
 columns.remove('TopFTA')
 columns.remove('BotFTA')
-
 columns.remove('TopFTR')
 columns.remove('BotFTR')
-
 columns.remove('TopTravel')
 columns.remove('BotTravel')
-
 columns.remove('TopOppPTS')
 columns.remove('BotOppPTS')
-#
 
 pd.options.display.width = 100
 
 
-def predict(year=2017, model='model', new=True, col_labels=columns, model_type=None):
+def predict(year=2017, model='model', new=True, col_labels=None, model_type=None):
     """Train machine learning model for use"""
 
     # Initialize Data
-
-    # get data
     data = pd.read_csv('NCAA2001_2017.csv')
     data_2018 = pd.read_csv('NCAA2018.csv')
     data_2018['year'] = 2018
-    data = data.append(data_2018)
-
+    data = data.append(data_2018, sort=True)
     model_file_path = './Models/' + model + '.pickle'
     try:
         with open(model_file_path, 'rb') as _:
-            # TODO Implement model saving
+            # new is False so algorithm will continue with existing model
             pass
     except FileNotFoundError:
+        # new was False but algorithm was not found
+        print('Model not found. Creating new model...')
         new = True
 
     # data to pull from the data frame
@@ -83,6 +84,10 @@ def predict(year=2017, model='model', new=True, col_labels=columns, model_type=N
     if 'SeedType' in col_labels:
         col_labels.remove('SeedType')
         if len(col_labels) != 0:
+            # Convert data to floats
+            for column in data:
+                if data[column].dtype == 'int64':
+                    data[column] = data[column].astype('float64')
             data[col_labels] = scale(data[col_labels])
         col_labels.insert(0, 'SeedType')
     else:
@@ -104,7 +109,6 @@ def predict(year=2017, model='model', new=True, col_labels=columns, model_type=N
     test_results = data.loc[data['year'] == year][results_columns]
 
     # Create or Retrieve Model
-
     # if creating new model
     if new:
         # collect data from correct year and columns
@@ -117,13 +121,6 @@ def predict(year=2017, model='model', new=True, col_labels=columns, model_type=N
         train_results = data.loc[(data['year'] != year) &
                                  (data['year'] != 2018)]['Upset']  # not a df
 
-        # # current input set
-        # test = data.loc[data['year'] == year][col_labels]
-        # # results to display
-        # results_columns = ['SeedType', 'TopSeed', 'BotSeed', 'Upset']
-        # test_results = data.loc[data['year'] == year][results_columns]
-
-        ##########
         # have to one-hot the seeding type if that's in there
         if 'SeedType' in col_labels:
             enc = OneHotEncoder(categorical_features=[0])  # must be first
@@ -142,9 +139,6 @@ def predict(year=2017, model='model', new=True, col_labels=columns, model_type=N
             model = SVC(probability=True)
         else:
             model = lm.LogisticRegression()
-
-        with open(model_file_path, 'wb') as model_file:
-            pickle.dump(model, model_file)
 
         # fit data to model (train)
         model.fit(train, train_results.as_matrix())
@@ -167,8 +161,6 @@ def predict(year=2017, model='model', new=True, col_labels=columns, model_type=N
             test = test.as_matrix()
 
     # Create Predictions
-
-    # create predictions
     predictions = model.predict_proba(test)
 
     # add probability to display output
@@ -191,7 +183,7 @@ def predict(year=2017, model='model', new=True, col_labels=columns, model_type=N
     test_results = test_results.sort_values('UpsetProbability', ascending=0)
 
     # add sum column + extra formatting
-    test_results = test_results.append(num_correct)
+    test_results = test_results.append(num_correct, sort=True)
     test_results.replace(np.nan, '', inplace=True)
 
     # output data
@@ -200,5 +192,4 @@ def predict(year=2017, model='model', new=True, col_labels=columns, model_type=N
 
 
 if __name__ == '__main__':
-    # predict(model='all')
-    pass
+    predict()
