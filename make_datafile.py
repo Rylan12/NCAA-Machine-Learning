@@ -1,4 +1,3 @@
-# noinspection SpellCheckingInspection
 """
 Written by Kevin Nowland and Matthew Osborne
 Last Updated on Feb 16, 2018
@@ -917,5 +916,5 @@ def make_yearfile(year):
 
 
 # Uncomment the below lines to write csv files for all years 2001-2017
-for year in range(2001, 2002, 1):
-    make_yearfile(year)
+# for year in range(2001, 2018, 1):
+#     make_yearfile(year)
