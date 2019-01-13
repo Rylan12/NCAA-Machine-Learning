@@ -184,7 +184,7 @@ def write_team_stats(f, stats):
     f.write(str(stats["ftr"]) + ",")
     f.write(str(stats["ortg"]) + ",")
     f.write(str(stats["drtg"]) + ",")
-    f.write(str(stats["sos"]))
+    f.write(str(stats["sos"]) + ",")
     logging.info("write_team_stats: exiting")
 
 
@@ -203,7 +203,7 @@ def make_yearfile(year):
     logging.info("make_yearfile: writing to: " + file_name)
     f.write("Region,GameCity,GameState,seed,team,score,games,fg,fga,fgPerc,3p,3pa,\
             3pPerc,2p,2pa,2pPerc,pts,opp_pts,ast,orb,drb,poss,tsPerc,efgPerc,tov,\
-            toPerc,ft,fta,ftr,ortg,drtg,sos\n")
+            toPerc,ft,fta,ftr,ortg,drtg,sos,loss\n")
 
     # load the web page
     sports_ref_url = "https://www.sports-reference.com"
@@ -215,15 +215,51 @@ def make_yearfile(year):
     # the page is organized by round
     # The bracket is broken into four regions, some years have different regions than
     # others. Here we break up the code depending on the year entered.
+    regions = []
+
     if year == 2004:
         # These are the four regions for 2004
-        stl = soup.find_all("div", {"id": "stlouis"})
-        atl = soup.find_all("div", {"id": "atlanta"})
-        erf = soup.find_all("div", {"id": "eastrutherford"})
-        phx = soup.find_all("div", {"id": "phoenix"})
+        regions.append(soup.find_all("div", {"id": "stlouis"}))
+        regions.append(soup.find_all("div", {"id": "atlanta"}))
+        regions.append(soup.find_all("div", {"id": "eastrutherford"}))
+        regions.append(soup.find_all("div", {"id": "phoenix"}))
+    elif year == 2005:
+        # In 2005 the regions were syracuse, albuquerque, austin, chicago
+        regions.append(soup.find_all("div", {"id": "syracuse"}))
+        regions.append(soup.find_all("div", {"id": "albuquerque"}))
+        regions.append(soup.find_all("div", {"id": "austin"}))
+        regions.append(soup.find_all("div", {"id": "chicago"}))
+    elif year == 2006:
+        #  Regions in 2006 are minneapolis, atlanta, oakland, washington
+        regions.append(soup.find_all("div", {"id": "minneapolis"}))
+        regions.append(soup.find_all("div", {"id": "atlanta"}))
+        regions.append(soup.find_all("div", {"id": "oakland"}))
+        regions.append(soup.find_all("div", {"id": "washington"}))
+    elif year == 2011:
+        # regions for 2011 are east, southeast, southwest, west
+        regions.append(soup.find_all("div", {"id": "east"}))
+        regions.append(soup.find_all("div", {"id": "southeast"}))
+        regions.append(soup.find_all("div", {"id": "southwest"}))
+        regions.append(soup.find_all("div", {"id": "west"}))
+    else:
+        # all other years in range have regions east, south, midwest, west
+        regions.append(soup.find_all("div", {"id": "east"}))
+        regions.append(soup.find_all("div", {"id": "south"}))
+        regions.append(soup.find_all("div", {"id": "midwest"}))
+        regions.append(soup.find_all("div", {"id": "west"}))
 
-        # Get data for all teams in st louis region
-        rounds = stl[0].find_all("div", {"class": "round"})
+    get_game_info(f, sports_ref_url, regions)
+
+    # Done writing data to file
+    f.close()
+    logging.info("make_yearfile: exiting")
+
+
+def get_game_info(f, sports_ref_url, regions):
+    region_num = 0
+    region_names = ['One', 'Two', 'Three', "Four"]
+    for region in regions:
+        rounds = region[0].find_all("div", {"class": "round"})
         rd = rounds[0]
         games = rd.find_all("div")
         for j in range(0, 24, 3):
@@ -232,7 +268,7 @@ def make_yearfile(year):
             links = game.find_all("a")
             logging.info("make_yearfile: %s", links[0].text)
             # Higher seed data first
-            f.write("One,")  # Bracket Region
+            f.write(region_names[region_num] + ",")  # Bracket Region
             f.write(links[4].text + ",")  # game location
             f.write(spans[0].text + ",")  # higher seed
             f.write(links[0].text + ",")  # name
@@ -241,10 +277,15 @@ def make_yearfile(year):
             logging.info("make_yearfile: getting response from: " + team_url)
             stats = get_team_stats(team_url)
             write_team_stats(f, stats)
+            if int(links[1].text) > int(links[3].text):
+                f.write('0')  # loss
+            else:
+                f.write('1')
             f.write("\n")
+
             # Lower seed data second
             logging.info("make_yearfile: %s", links[2].text)
-            f.write("One,")  # Bracket Region
+            f.write(region_names[region_num] + ",")  # Bracket Region
             f.write(links[4].text + ",")  # game location
             f.write(spans[1].text + ",")  # lower seed
             f.write(links[2].text + ",")  # name
@@ -253,670 +294,17 @@ def make_yearfile(year):
             logging.info("make_yearfile: getting response from: " + team_url)
             stats = get_team_stats(team_url)
             write_team_stats(f, stats)
-            f.write("\n")
+            if int(links[3].text) > int(links[1].text):
+                f.write('0')  # loss
+            else:
+                f.write('1')
 
-        # Get data for all teams in atlanta region
-        rounds = atl[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            logging.info("make_yearfile: %s", links[0].text)
-            # Higher Seed first
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
             f.write("\n")
-            # Lower Seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in eastrutherford region
-        rounds = erf[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher Seed First
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower Seed Second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in phoenix region
-        rounds = phx[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher Seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-    elif year == 2005:
-        # In 2005 the regions were syracuse, albuquerque, austin, chicago
-        syr = soup.find_all("div", {"id": "syracuse"})
-        abq = soup.find_all("div", {"id": "albuquerque"})
-        aus = soup.find_all("div", {"id": "austin"})
-        chi = soup.find_all("div", {"id": "chicago"})
-
-        # Get data for syracuse region
-        rounds = syr[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-        # Get data for all teams in albuquerque region
-        rounds = abq[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher Seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in austin region
-        rounds = aus[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower Seed Second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in chicago region
-        rounds = chi[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-    elif year == 2006:
-        #  Regions in 2006 are minneapolis, atlanta, oakland, washington
-        minn = soup.find_all("div", {"id": "minneapolis"})
-        atl = soup.find_all("div", {"id": "atlanta"})
-        oak = soup.find_all("div", {"id": "oakland"})
-        wsh = soup.find_all("div", {"id": "washington"})
-
-        # Get data for all teams in minneapolis region
-        rounds = minn[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-        # Get data for all teams in atlanta region
-        rounds = atl[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in oakland region
-        rounds = oak[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-        # Get data for all teams in washington region
-        rounds = wsh[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-    elif year == 2011:
-        # regions for 2011 are east, southeast, southwest, west
-        est = soup.find_all("div", {"id": "east"})
-        se = soup.find_all("div", {"id": "southeast"})
-        sw = soup.find_all("div", {"id": "southwest"})
-        west = soup.find_all("div", {"id": "west"})
-
-        # Get data for all teams in east region
-        rounds = est[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            # lower seed second
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-        # Get data for all teams in southeast region
-        rounds = se[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in southwest region
-        rounds = sw[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in west region
-        rounds = west[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-    else:
-        # all other years in range have regions east, south, midwest, west
-        east = soup.find_all("div", {"id": "east"})
-        south = soup.find_all("div", {"id": "south"})
-        midwest = soup.find_all("div", {"id": "midwest"})
-        west = soup.find_all("div", {"id": "west"})
-
-        # Get data for all teams in east region
-        rounds = east[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # Lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("One,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-        # Get data for all teams in south region
-        rounds = south[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Two,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-        # Get data for all teams in midwest region
-        rounds = midwest[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            # Higher seed first
-            links = game.find_all("a")
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Three,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-            # Get data for all teams in west region
-        rounds = west[0].find_all("div", {"class": "round"})
-        rd = rounds[0]
-        games = rd.find_all("div")
-        for j in range(0, 24, 3):
-            game = games[j]
-            spans = game.find_all("span")
-            links = game.find_all("a")
-            # Higher seed first
-            logging.info("make_yearfile: %s", links[0].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[0].text + ",")  # higher seed
-            f.write(links[0].text + ",")  # name
-            f.write(links[1].text + ",")  # score
-            team_url = sports_ref_url + links[0].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-            # lower seed second
-            logging.info("make_yearfile: %s", links[2].text)
-            f.write("Four,")  # Bracket Region
-            f.write(links[4].text + ",")  # game location
-            f.write(spans[1].text + ",")  # lower seed
-            f.write(links[2].text + ",")  # name
-            f.write(links[3].text + ",")  # score
-            team_url = sports_ref_url + links[2].get("href")
-            logging.info("make_yearfile: getting response from: " + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats)
-            f.write("\n")
-
-    # Done writing data to file 
-    f.close()
-    logging.info("make_yearfile: exiting")
+        region_num += 1
 
 
 # Uncomment the below lines to write csv files for all years 2001-2017
 if __name__ == '__main__':
     # make_yearfile(2019)
-    for year in range(2001, 2018, 1):
-        make_yearfile(year)
+    for year_num in range(2004, 2005, 1):
+        make_yearfile(year_num)
