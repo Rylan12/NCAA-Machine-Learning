@@ -124,15 +124,15 @@ def concatenate(directory):
                 #   2Per, PTs, OppPTS, AST, ORB, DRB,
                 line[mod + 10:mod + 26] = year_lines[slot][5:21]
                 # Poss
-                line[mod + 26] = None  # Implement: Poss
+                line[mod + 26:mod + 27] = [-9999]  # Implement: Poss
                 # TSPer, EFGPer, TOV
                 line[mod + 27:mod + 30] = year_lines[slot][22:25]
                 # TOPer
-                line[mod + 30] = None  # Implement: TOPer
+                line[mod + 30:mod + 31] = [-9999]  # Implement: TOPer
                 # FT, FTA, FTR
                 line[mod + 31:mod + 34] = year_lines[slot][26:29]
                 # ORTG, DRTG
-                line[mod + 34:mod + 36] = [None, None]  # Implement: ORTG, DRTG
+                line[mod + 34:mod + 36] = [-9999, -9999]  # Implement: ORTG, DRTG
                 # SOS
                 line[mod + 36] = year_lines[slot][31]
 
