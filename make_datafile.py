@@ -109,7 +109,7 @@ def concatenate(directory):
             # Set up line
             line = [None for _ in range(68)]
             # year, SeedType, Upset
-            line[:3] = [year, SeedType({year_lines[0][3], year_lines[1][3]}).name, 0]  # Implement: Upset
+            line[:3] = [year, SeedType({year_lines[0][3], year_lines[1][3]}).name, year_lines[0][32]]
             # Region, GameCity, GameState
             line[3:6] = year_lines[0][0:3]
 
