@@ -64,8 +64,8 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
     """
 
     # Initialize Data
-    # data = pd.read_csv('datafile.csv')
-    data = pd.read_csv('NCAA2001_2017.csv')
+    data = pd.read_csv('datafile.csv')
+    # data = pd.read_csv('NCAA2001_2017.csv')
     data_2018 = pd.read_csv('NCAA2018.csv')
     data_2018['year'] = 2018
     data = data.append(data_2018, sort=True)
