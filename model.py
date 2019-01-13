@@ -1,6 +1,7 @@
 """
 Make a model to predict upsets
 """
+import json
 import sys
 import warnings
 import numpy as np
@@ -12,37 +13,41 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.preprocessing import scale, OneHotEncoder
 
+pd.options.display.width = 100
+
 # Ignore warnings
 if not sys.warnoptions:
-    warnings.simplefilter("default")
-    warnings.simplefilter("ignore", category=FutureWarning)
-    warnings.simplefilter("ignore", category=DeprecationWarning)
-    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+    warnings.simplefilter('default')
+    warnings.simplefilter('ignore', category=FutureWarning)
+    warnings.simplefilter('ignore', category=DeprecationWarning)
+    warnings.simplefilter('ignore', category=PendingDeprecationWarning)
 
-# Open columns
-with open('columns.pickle', 'rb') as column_file:
-    columns = pickle.load(column_file)
 
-columns.remove('TopScore')
-columns.remove('BotScore')
-columns.remove('TopTOV')
-columns.remove('BotTOV')
-columns.remove('TopTOPer')
-columns.remove('BotTOPer')
-columns.remove('TopTSPer')
-columns.remove('BotTSPer')
-columns.remove('TopFT')
-columns.remove('BotFT')
-columns.remove('TopFTA')
-columns.remove('BotFTA')
-columns.remove('TopFTR')
-columns.remove('BotFTR')
-columns.remove('TopTravel')
-columns.remove('BotTravel')
-columns.remove('TopOppPTS')
-columns.remove('BotOppPTS')
+def get_columns():
+    # Open columns
+    with open('columns.json', 'r') as column_file:
+        columns = json.load(column_file)
 
-pd.options.display.width = 100
+    columns.remove('TopScore')
+    columns.remove('BotScore')
+    columns.remove('TopTOV')
+    columns.remove('BotTOV')
+    columns.remove('TopTOPer')
+    columns.remove('BotTOPer')
+    columns.remove('TopTSPer')
+    columns.remove('BotTSPer')
+    columns.remove('TopFT')
+    columns.remove('BotFT')
+    columns.remove('TopFTA')
+    columns.remove('BotFTA')
+    columns.remove('TopFTR')
+    columns.remove('BotFTR')
+    columns.remove('TopTravel')
+    columns.remove('BotTravel')
+    columns.remove('TopOppPTS')
+    columns.remove('BotOppPTS')
+
+    return columns
 
 
 def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels: list = None,
@@ -88,7 +93,7 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
                 'BotDRTG',
                 'BotSOS'
                 ]'''
-        col_labels = columns
+        col_labels = get_columns()
 
     # don't scale SeedType
     if 'SeedType' in col_labels:
