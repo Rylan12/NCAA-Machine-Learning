@@ -109,7 +109,7 @@ def concatenate(directory):
             # Set up line
             line = [None for _ in range(68)]
             # year, SeedType, Upset
-            line[:3] = [year, SeedType({year_lines[0][3], year_lines[1][3]}).name, None]  # Implement: Upset
+            line[:3] = [year, SeedType({year_lines[0][3], year_lines[1][3]}).name, 0]  # Implement: Upset
             # Region, GameCity, GameState
             line[3:6] = year_lines[0][0:3]
 
@@ -119,7 +119,7 @@ def concatenate(directory):
                 mod = slot * 31
 
                 # Seed, City, ST, Travel
-                line[mod + 6:mod + 10] = [year_lines[slot][4], None, None, None]  # Implement: City, ST, Travel
+                line[mod + 6:mod + 10] = [year_lines[slot][4], '', '', '']  # Implement: City, ST, Travel
                 # Score, Games, FG, FGA, FGPer, 3P, 3PA, 3Per, 2P, 2PA,
                 #   2Per, PTs, OppPTS, AST, ORB, DRB,
                 line[mod + 10:mod + 26] = year_lines[slot][5:21]
