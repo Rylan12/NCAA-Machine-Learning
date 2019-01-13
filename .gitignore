@@ -1,2 +1,3 @@
-*.csv
+Models
+*.pickle
 __pycache__
