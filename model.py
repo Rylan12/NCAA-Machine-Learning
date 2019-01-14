@@ -13,7 +13,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.preprocessing import scale, OneHotEncoder
 
-pd.options.display.width = 100
+pd.set_option('display.width', 100)
+pd.set_option('display.max_columns', 10)
 
 # Ignore warnings
 if not sys.warnoptions:
@@ -66,9 +67,9 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
     # Initialize Data
     data = pd.read_csv('datafile.csv')
     # data = pd.read_csv('NCAA2001_2017.csv')
-    data_2018 = pd.read_csv('NCAA2018.csv')
-    data_2018['year'] = 2018
-    data = data.append(data_2018, sort=True)
+    # data_2018 = pd.read_csv('NCAA2018.csv')
+    # data_2018['year'] = 2018
+    # data = data.append(data_2018, sort=True)
     model_file_path = './Models/' + model + '.pickle'
     try:
         with open(model_file_path, 'rb') as _:
@@ -208,4 +209,4 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
 
 
 if __name__ == '__main__':
-    predict(year=2004)
+    predict(year=2018)

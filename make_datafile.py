@@ -100,12 +100,6 @@ def concatenate(directory):
             # Two rows at a time
             year_lines = [data[year][row], data[year][row + 1]]
 
-            # Do any formatting that is needed for the data
-            year_lines[0][1] = year_lines[0][1][3:]
-            year_lines[1][1] = year_lines[1][1][3:]
-            year_lines[0][2] = year_lines[0][2][1:]
-            year_lines[1][2] = year_lines[1][2][1:]
-
             # Set up line
             line = [None for _ in range(68)]
             # year, SeedType, Upset
@@ -163,7 +157,7 @@ def get_data_file(yearfile):
 
 
 if __name__ == '__main__':
-    current_year = 2005
+    current_year = 2019
 
     # Collect all necessary data files (only if needed)
     for i in range(2001, current_year):
@@ -172,3 +166,5 @@ if __name__ == '__main__':
 
     # Concatenate into single data file
     concatenate('Data Files')
+
+    make_yearfile(current_year, True)
