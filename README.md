@@ -1,11 +1,15 @@
 # NCAA
-#### Created February 2018
-#### by Kevin Nowland and Matthew Osborne
-
+###### Created by Kevin Nowland and Matthew Osborne
+###### Adaptation by Rylan Polster
 In this repository is python code used to scrape 2001-2017 ncaa first round tournament data from https://www.sports-reference.com/cbb/. Descriptions of the basketball statistics can be found on that site. Additionally, we have included the data file we managed to scrape and then clean for our purposes. The variables in this csv file can be found below.
 
-Variable description for NCAA2001_2017.csv
-----------------------------------------------------------------
+## Usage
+1. Change `current_year` on line 166 of `make_datafile.py` to the current year
+2. Run `make_datafile.py`
+3. Change line 211 in `model.py` to reflect the year you want to check
+4. Run `model.py`
+
+## Variable description for NCAA2001_2017.csv
 year - This is the year that the tournament took place, values 2001-2017
 
 SeedType - This is the seeding of the game. For example, OneSixteen  means it was the 1st seed vs the 16th seed.
