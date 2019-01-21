@@ -2,6 +2,7 @@
 Make a model to predict upsets
 """
 import json
+import os
 import sys
 import warnings
 import numpy as np
@@ -161,6 +162,8 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
         model.fit(train, train_results.as_matrix())
 
         # save model
+        if not os.path.exists('Models/'):
+            os.makedirs('Models')
         with open(model_file_path, 'wb') as model_file:
             pickle.dump(model, model_file)
 
