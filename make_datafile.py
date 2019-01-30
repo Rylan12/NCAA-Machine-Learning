@@ -1,4 +1,5 @@
 import csv
+import os
 from os import listdir
 from make_yearfiles import make_yearfile
 from seed_type import SeedType
@@ -79,7 +80,7 @@ def get_year(file):
     return file[-8:-4]
 
 
-def concatenate(directory):
+def concatenate(directory, current=False):
     # Get all year files
     years = []
     for year in listdir(directory):
@@ -103,7 +104,8 @@ def concatenate(directory):
             # Set up line
             line = [None for _ in range(68)]
             # year, SeedType, Upset
-            line[:3] = [year, SeedType({year_lines[0][3], year_lines[1][3]}).name, year_lines[0][32]]
+            upset = year_lines[0][32] if not current else None
+            line[:3] = [year, SeedType({year_lines[0][3], year_lines[1][3]}).name, upset]
             # Region, GameCity, GameState
             line[3:6] = year_lines[0][0:3]
 
@@ -129,10 +131,18 @@ def concatenate(directory):
     datafile.insert(0, COLUMNS)
 
     # Write data
-    with open('datafile.csv', 'w') as file:
+    with open('datafile.csv' if not current else 'current.csv', 'w') as file:
         writer = csv.writer(file)
         for line in datafile:
             writer.writerow(line)
+
+
+def create_current_file(year):
+    if not os.path.exists('ncaa' + str(year) + '.csv'):
+        print('Error loading file for', str(year))
+        print('current.csv was not updated')
+        return
+    concatenate('', True)
 
 
 def get_data_file(yearfile):
@@ -154,5 +164,4 @@ if __name__ == '__main__':
 
     # Concatenate into single data file
     concatenate('Data Files')
-
-    make_yearfile(current_year, True)
+    create_current_file(current_year)

@@ -52,21 +52,46 @@ def get_columns():
     return columns
 
 
-def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels: list = None,
-            model_type: str = None) -> None:
+def format_data_frame(data, col_labels):
+    # don't scale SeedType
+    if 'SeedType' in col_labels:
+        col_labels.remove('SeedType')
+        if len(col_labels) != 0:
+            # Convert data to floats
+            for column in data:
+                if data[column].dtype == 'int64':
+                    data[column] = data[column].astype('float64')
+            data[col_labels] = scale(data[col_labels])
+        col_labels.insert(0, 'SeedType')
+    else:
+        data[col_labels] = scale(data[col_labels])
+    # change SeedTypes to integers in case need to encode later
+    data = data.replace(
+        ['OneSixteen', 'TwoFifteen', 'ThreeFourteen',
+         'FourThirteen', 'FiveTwelve', 'SixEleven',
+         'SevenTen', 'EightNine'],
+        [1, 2, 3, 4, 5, 6, 7, 8])
+    return data
+
+
+def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels: list = None,
+            model_type: str = None, matchup: bool = False, current_year: bool = False) -> None:
     """
     Train machine learning model for use
 
+    :param current_year: Whether the selected year is the current year or not
     :param year: Year to run predictions for
     :param model: Model name
     :param new: Whether or not to create and train a new model
     :param col_labels: Columns to include in analysis
     :param model_type: Type of model to use ('forest', 'gbc', 'svm', or None for logistic regression)
+    :param matchup: Whether of not to run the model based on a specific matchup
     :returns: None
     """
 
     # Initialize Data
-    data = pd.read_csv('datafile.csv')
+    data = pd.read_csv('datafile.csv' if not matchup else 'Matchup/matchup.csv')
+    current = pd.read_csv('current.csv' if not matchup else 'Matchup/matchup.csv') if current_year else data
     # data = pd.read_csv('NCAA2001_2017.csv')
     # data_2018 = pd.read_csv('NCAA2018.csv')
     # data_2018['year'] = 2018
@@ -98,25 +123,8 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
                 ]'''
         col_labels = get_columns()
 
-    # don't scale SeedType
-    if 'SeedType' in col_labels:
-        col_labels.remove('SeedType')
-        if len(col_labels) != 0:
-            # Convert data to floats
-            for column in data:
-                if data[column].dtype == 'int64':
-                    data[column] = data[column].astype('float64')
-            data[col_labels] = scale(data[col_labels])
-        col_labels.insert(0, 'SeedType')
-    else:
-        data[col_labels] = scale(data[col_labels])
-
-    # change SeedTypes to integers in case need to encode later
-    data = data.replace(
-        ['OneSixteen', 'TwoFifteen', 'ThreeFourteen',
-         'FourThirteen', 'FiveTwelve', 'SixEleven',
-         'SevenTen', 'EightNine'],
-        [1, 2, 3, 4, 5, 6, 7, 8])
+    data = format_data_frame(data, col_labels)
+    current = format_data_frame(current, col_labels)
 
     # current input set
     test = data.loc[data['year'] == year][col_labels]
@@ -124,7 +132,7 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
     # results to display
     results_columns = ['SeedType', 'TopSeed', 'BotSeed', 'Upset']
     # results_columns = ['TopSeed', 'BotSeed', 'Upset']
-    test_results = data.loc[data['year'] == year][results_columns]
+    test_results = current.loc[current['year'] == year][results_columns]
 
     # Create or Retrieve Model
     # if creating new model
@@ -196,7 +204,7 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
     num_correct = num_correct.reindex(columns=test_results.columns)
 
     # change formatting + look for readability
-    test_results['Correct'].replace([1, 0], ['✓', 'x'], inplace=True)
+    test_results['Correct'].replace([1, 0], ['', 'x'], inplace=True)
     test_results['Upset'].replace([0.0, 1.0], [0, 1], inplace=True)
 
     # sort predictions
@@ -206,10 +214,15 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
     test_results = test_results.append(num_correct, sort=True)
     test_results.replace(np.nan, '', inplace=True)
 
+    if current_year:
+        # TODO: Format data frame for current year (remove correct, change upset to predicted upset
+        pass
+
     # output data
     print('\n\nYear: %d\n' % year)
     print(test_results)
+    test_results.to_csv('2017thing.csv')
 
 
 if __name__ == '__main__':
-    predict(year=2018)
+    predict(year=2004)
