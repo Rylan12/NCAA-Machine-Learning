@@ -17,6 +17,8 @@ from sklearn.preprocessing import scale, OneHotEncoder
 pd.set_option('display.width', 100)
 pd.set_option('display.max_columns', 10)
 
+threshold = 0.5
+
 # Ignore warnings
 if not sys.warnoptions:
     warnings.simplefilter('default')
@@ -50,6 +52,10 @@ def get_columns():
     columns.remove('BotOppPTS')
 
     return columns
+
+
+def upset(probability, upset_cutoff=threshold):
+    return round(probability + 0.5 - upset_cutoff)
 
 
 def format_data_frame(data, col_labels):
@@ -196,7 +202,7 @@ def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels
     for i in range(len(predictions)):
         probability.append(predictions[i][1])  # second column is upset percentage
     test_results['UpsetProbability'] = probability
-    test_results['Correct'] = test_results['Upset'] == round(test_results['UpsetProbability'])
+    test_results['Correct'] = test_results['Upset'] == upset(test_results['UpsetProbability'])
 
     # calculate total number correct
     test_results['Correct'].replace([True, False], [1, 0], inplace=True)
@@ -206,6 +212,8 @@ def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels
     # change formatting + look for readability
     test_results['Correct'].replace([1, 0], ['', 'x'], inplace=True)
     test_results['Upset'].replace([0.0, 1.0], [0, 1], inplace=True)
+
+    # test_results.rename(index=str, columns={"Upset": "Actual"})
 
     # sort predictions
     test_results = test_results.sort_values('UpsetProbability', ascending=0)
@@ -225,4 +233,4 @@ def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels
 
 
 if __name__ == '__main__':
-    predict(year=2004)
+    predict(year=2018)
