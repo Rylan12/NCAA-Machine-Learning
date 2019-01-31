@@ -19,6 +19,10 @@ pd.set_option('display.max_columns', 10)
 
 threshold = 0.5
 
+current_tournament_year = 2018
+
+_directory = '/Users/rylanpolster/PycharmProjects/NCAA-Machine-Learning/'
+
 # Ignore warnings
 if not sys.warnoptions:
     warnings.simplefilter('default')
@@ -29,7 +33,7 @@ if not sys.warnoptions:
 
 def get_columns():
     # Open columns
-    with open('columns.json', 'r') as column_file:
+    with open(_directory + 'columns.json', 'r') as column_file:
         columns = json.load(column_file)
 
     columns.remove('TopScore')
@@ -80,7 +84,7 @@ def format_data_frame(data, col_labels):
     return data
 
 
-def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels: list = None,
+def predict(year: int = current_tournament_year, model: str = 'model', new: bool = True, col_labels: list = None,
             model_type: str = None, matchup: bool = False, current_year: bool = False) -> None:
     """
     Train machine learning model for use
@@ -96,13 +100,14 @@ def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels
     """
 
     # Initialize Data
-    data = pd.read_csv('datafile.csv' if not matchup else 'Matchup/matchup.csv')
-    current = pd.read_csv('current.csv' if not matchup else 'Matchup/matchup.csv') if current_year else data
+    data = pd.read_csv(_directory + ('./datafile.csv' if not matchup else './Matchup/matchup.csv'))
+    current = pd.read_csv(
+        _directory + ('./current.csv' if not matchup else './Matchup/matchup.csv')) if current_year else data
     # data = pd.read_csv('NCAA2001_2017.csv')
     # data_2018 = pd.read_csv('NCAA2018.csv')
     # data_2018['year'] = 2018
     # data = data.append(data_2018, sort=True)
-    model_file_path = './Models/' + model + '.pickle'
+    model_file_path = _directory + 'Models/' + model + '.pickle'
     try:
         with open(model_file_path, 'rb') as _:
             # new is False so algorithm will continue with existing model
@@ -176,8 +181,8 @@ def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels
         model.fit(train, train_results.as_matrix())
 
         # save model
-        if not os.path.exists('Models/'):
-            os.makedirs('Models')
+        if not os.path.exists(_directory + 'Models/'):
+            os.makedirs(_directory + 'Models')
         with open(model_file_path, 'wb') as model_file:
             pickle.dump(model, model_file)
 
@@ -229,8 +234,9 @@ def predict(year: int = 2018, model: str = 'model', new: bool = True, col_labels
     # output data
     print('\n\nYear: %d\n' % year)
     print(test_results)
-    test_results.to_csv('2017thing.csv')
+    test_results.to_csv(_directory + '2017thing.csv')
 
 
 if __name__ == '__main__':
-    predict(year=2018)
+    _directory = ''
+    predict()

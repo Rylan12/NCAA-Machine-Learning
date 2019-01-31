@@ -1,0 +1,65 @@
+#!/Users/rylanpolster/PycharmProjects/NCAA-Machine-Learning/venv/bin/python
+
+from model import predict, current_tournament_year
+import argparse
+
+
+def valid_year(year):
+    try:
+        if 2001 <= int(year) <= current_tournament_year:
+            return int(year)
+    except ValueError:
+        pass
+    msg = 'invalid year value: {}. year must be an integer between 2001 and {}'.format(year, current_tournament_year)
+    raise argparse.ArgumentTypeError(msg)
+
+
+parser = argparse.ArgumentParser(description='Calculate the upset percentages for the first round of the NCAA '
+                                             'basketball tournament')
+
+parser.add_argument('-y', '--year', type=valid_year, help='The year to run predictions for')
+parser.add_argument('-m', '--model', type=str, help='Model name (default is model)')
+parser.add_argument('-n', '--new', action='store_true',
+                    help='Create new model (only necessary if providing a model name)')
+parser.add_argument('-l', '--labels', type=str, help='Columns to use for predictions')
+parser.add_argument('-u', '--matchup', action='store_true', help='Run based on a specific matchup')
+parser.add_argument('-c', '--current', action='store_true', help='Run with this year as the current year')
+
+model_type = parser.add_mutually_exclusive_group()
+model_type.add_argument('-f', '--forest', action='store_true', help='Use the Random Forest Classifier algorithm')
+model_type.add_argument('-g', '--gbc', action='store_true', help='Use the Gradient Boosting Classifier algorithm')
+model_type.add_argument('-s', '--svc', action='store_true', help='Use a Support Vector Machine')
+
+
+def set_argument_values(arguments):
+    dictionary = {}
+    if arguments.year:
+        dictionary['year'] = arguments.year
+    if arguments.model:
+        dictionary['model'] = arguments.model
+        dictionary['new'] = False
+    if arguments.new:
+        dictionary['new'] = True
+    if arguments.labels:
+        labels = arguments.labels.split(',')
+        for l in range(len(labels)):
+            labels[l] = labels[l].strip()
+        dictionary['col_labels'] = labels
+    if arguments.matchup:
+        dictionary['matchup'] = True
+    if arguments.current:
+        dictionary['current_year'] = True
+    if arguments.forest:
+        dictionary['model_type'] = 'forest'
+    if arguments.gbc:
+        dictionary['model_type'] = 'gbc'
+    if arguments.svc:
+        dictionary['model_type'] = 'svc'
+    return dictionary
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    predict(**set_argument_values(args))
+    # arg_dict = set_argument_values(args)
+    # print(arg_dict)
