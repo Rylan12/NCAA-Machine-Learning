@@ -3,7 +3,7 @@ This is a statistical program designed to analyze data from past years in order 
 ## Previous Predictions
 
 ### 2018
-![2018 Predictions](Images/2018-Predictions)
+![2018 Predictions](Images/2018-Predictions.png)
 
 ### 2017
-![2017 Predictions](Images/2017-Predictions)
+![2017 Predictions](Images/2017-Predictions.png)
