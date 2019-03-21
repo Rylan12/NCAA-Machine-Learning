@@ -8,6 +8,10 @@ Here are various links to the required personal project components:
 
 ## Previous Predictions
 
+### 2019
+![2019 Predictions](Images/2019-Predictions.png)
+###### Upladed on 3/21/2019 at 11:51 AM
+
 ### 2018
 ![2018 Predictions](Images/2018-Predictions.png)
 
