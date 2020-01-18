@@ -80,12 +80,17 @@ def get_year(file):
     return file[-8:-4]
 
 
-def concatenate(directory, current=False):
+def concatenate(directory, current=False, current_year=None):
     # Get all year files
     years = []
     for year in listdir(directory):
         if year != '.DS_Store':
-            years.append(directory + '/' + year)
+            if current:
+                if year == 'ncaa' + str(current_year) + '.csv':
+                    years.append(directory + '/' + year)
+            elif current_year is None or year != 'ncaa' + str(current_year) + '.csv':
+                years.append(directory + '/' + year)
+
 
     # Extract data from year files
     data = {}
@@ -105,7 +110,9 @@ def concatenate(directory, current=False):
             line = [None for _ in range(68)]
             # year, SeedType, Upset
             upset = year_lines[0][32] if not current else None
-            line[:3] = [year, SeedType({year_lines[0][3], year_lines[1][3]}).name, upset]
+            line[:3] = [year,
+                        SeedType({year_lines[0][3], year_lines[1][3]}).name,
+                        upset]
             # Region, GameCity, GameState
             line[3:6] = year_lines[0][0:3]
 
@@ -115,7 +122,8 @@ def concatenate(directory, current=False):
                 mod = slot * 31
 
                 # Seed, City, ST, Travel
-                line[mod + 6:mod + 10] = [year_lines[slot][4], '', '', '']  # Implement: City, ST, Travel
+                line[mod + 6:mod + 10] = [year_lines[slot][4], '', '',
+                                          '']  # Implement: City, ST, Travel
                 # Score, Games, FG, FGA, FGPer, 3P, 3PA, 3Per, 2P, 2PA, 2Per, PTs, OppPTS, AST,
                 #   ORB, DRB, Poss, TSPer, EFGPer, TOV, TOPer, FT, FTA, FTR, ORTG, DRTG, SOS
                 line[mod + 10:mod + 37] = year_lines[slot][5:32]
@@ -138,11 +146,11 @@ def concatenate(directory, current=False):
 
 
 def create_current_file(year):
-    if not os.path.exists('ncaa' + str(year) + '.csv'):
+    if not os.path.exists('Data Files/ncaa' + str(year) + '.csv'):
         print('Error loading file for', str(year))
         print('current.csv was not updated')
         return
-    concatenate('', True)
+    concatenate('Data Files', True, current_year=year)
 
 
 def get_data_file(yearfile):
@@ -155,13 +163,18 @@ def get_data_file(yearfile):
 
 
 if __name__ == '__main__':
-    current_year = 2019
+    current_year = 2020
 
     # Collect all necessary data files (only if needed)
-    for i in range(2001, current_year):
-        if 'ncaa' + str(i) + '.csv' not in listdir('Data Files'):
+    for i in range(2001, current_year + 1):
+        # print(listdir('Data Files'))
+        a = 'ncaa' + str(i) + '.csv'
+        b = listdir('Data Files')
+        if ('ncaa' + str(i) + '.csv') not in listdir('Data Files'):
             make_yearfile(i)
+            # print('\n\n\nMADE YEARFILE 1\n\n\n')
+            # make_yearfile(i, current=current_year == i)
 
     # Concatenate into single data file
-    concatenate('Data Files')
+    concatenate('Data Files', current_year=current_year)
     create_current_file(current_year)

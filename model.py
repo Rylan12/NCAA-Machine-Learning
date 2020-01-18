@@ -19,7 +19,7 @@ pd.set_option('display.max_columns', 10)
 
 threshold = 0.5
 
-current_tournament_year = 2018
+current_tournament_year = 2020
 
 _directory = '/Users/rylanpolster/PycharmProjects/NCAA-Machine-Learning/'
 
@@ -138,7 +138,10 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
     current = format_data_frame(current, col_labels)
 
     # current input set
-    test = data.loc[data['year'] == year][col_labels]
+    if not current_year:
+        test = data.loc[data['year'] == year][col_labels]
+    else:
+        test = current[col_labels]
 
     # results to display
     results_columns = ['SeedType', 'TopSeed', 'BotSeed', 'Upset']
@@ -151,12 +154,12 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
         # collect data from correct year and columns
         # training set inputs
         train = data.loc[(data['year'] != year) &
-                         (data['year'] != 2018)][col_labels]
+                         (data['year'] != current_tournament_year)][col_labels]
 
         # create training set answers
         # training set outputs
         train_results = data.loc[(data['year'] != year) &
-                                 (data['year'] != 2018)]['Upset']  # not a df
+                                 (data['year'] != current_tournament_year)]['Upset']  # not a df
 
         # have to one-hot the seeding type if that's in there
         if 'SeedType' in col_labels:
@@ -215,7 +218,7 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
     num_correct = num_correct.reindex(columns=test_results.columns)
 
     # change formatting + look for readability
-    test_results['Correct'].replace([1, 0], ['', 'x'], inplace=True)
+    test_results['Correct'].replace([1, 0], ['', '' if current_year else 'x'], inplace=True)
     test_results['Upset'].replace([0.0, 1.0], [0, 1], inplace=True)
 
     # test_results.rename(index=str, columns={"Upset": "Actual"})
@@ -239,4 +242,4 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
 
 if __name__ == '__main__':
     _directory = ''
-    predict()
+    predict(2018)

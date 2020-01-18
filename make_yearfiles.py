@@ -280,19 +280,33 @@ def get_game_info(f, sports_ref_url, regions, current=False):
             game = games[j]
             spans = game.find_all('span')
             links = game.find_all('a')
+            higher_seed = int(spans[0].text.strip())
             logging.info('make_yearfile: %s', links[0].text)
             # Higher seed data first
             f.write(region_names[region_num].strip() + ',')  # Bracket Region
-            f.write(links[4].text.strip()[3:-4] + ',')  # game location
-            f.write(links[4].text.strip()[-2:] + ',')  # game location
-            f.write(spans[0].text.strip() + ',')  # higher seed
-            f.write(links[0].text.strip() + ',')  # name
-            f.write(links[1].text.strip() + ',')  # score
+            if len(links) == 5:
+                f.write(links[4].text.strip()[3:-4] + ',')  # game location
+                f.write(links[4].text.strip()[-2:] + ',')  # game location
+                f.write(spans[0].text.strip() + ',')  # higher seed
+                f.write(links[0].text.strip() + ',')  # name
+                f.write(links[1].text.strip() + ',')  # score
+            elif len(links) == 2:
+                f.write('TBD,')  # game location
+                f.write('TBD,')  # game location
+                f.write(spans[0].text.strip() + ',')  # higher seed
+                f.write(links[0].text.strip() + ',')  # name
+                f.write(',')  # score
+            else:
+                f.write('TBD,')  # game location
+                f.write('TBD,')  # game location
+                f.write(spans[0].text.strip() + ',')  # higher seed
+                f.write(links[0].text.strip() + ',')  # name
+                f.write(',')  # score
             team_url = sports_ref_url + links[0].get('href')
             logging.info('make_yearfile: getting response from: ' + team_url)
             stats = get_team_stats(team_url)
             write_team_stats(f, stats, current)
-            if not current:
+            if not current and len(links) == 5:
                 if int(links[1].text) > int(links[3].text):
                     f.write('0')  # loss
                 else:
@@ -300,18 +314,40 @@ def get_game_info(f, sports_ref_url, regions, current=False):
             f.write('\n')
 
             # Lower seed data second
-            logging.info('make_yearfile: %s', links[2].text)
+            if len(links) == 5:
+                logging.info('make_yearfile: %s', links[2].text)
+            elif len(links) == 2:
+                logging.info('make_yearfile: %s', links[1].text)
             f.write(region_names[region_num].strip() + ',')  # Bracket Region
-            f.write(links[4].text.strip()[3:-4] + ',')  # game location
-            f.write(links[4].text.strip()[-2:] + ',')  # game location
-            f.write(spans[1].text.strip() + ',')  # lower seed
-            f.write(links[2].text.strip() + ',')  # name
-            f.write(links[3].text.strip() + ',')  # score
-            team_url = sports_ref_url + links[2].get('href')
-            logging.info('make_yearfile: getting response from: ' + team_url)
-            stats = get_team_stats(team_url)
-            write_team_stats(f, stats, current)
-            if not current:
+            if len(links) == 5:
+                f.write(links[4].text.strip()[3:-4] + ',')  # game location
+                f.write(links[4].text.strip()[-2:] + ',')  # game location
+                f.write(spans[1].text.strip() + ',')  # lower seed
+                f.write(links[2].text.strip() + ',')  # name
+                f.write(links[3].text.strip() + ',')  # score
+            elif len(links) == 2:
+                f.write('TBD,')  # game location
+                f.write('TBD,')  # game location
+                f.write(spans[1].text.strip() + ',')  # lower seed
+                f.write(links[1].text.strip() + ',')  # name
+                f.write(',')  # score
+            else:
+                f.write('TBD,')  # game location
+                f.write('TBD,')  # game location
+                f.write(str(17 - higher_seed) + ',')  # lower seed
+                f.write('TBD,')  # name
+                f.write(',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')  # score
+            if len(links) == 5:
+                team_url = sports_ref_url + links[2].get('href')
+                logging.info('make_yearfile: getting response from: ' + team_url)
+                stats = get_team_stats(team_url)
+                write_team_stats(f, stats, current)
+            elif len(links) == 2:
+                team_url = sports_ref_url + links[1].get('href')
+                logging.info('make_yearfile: getting response from: ' + team_url)
+                stats = get_team_stats(team_url)
+                write_team_stats(f, stats, current)
+            if not current and len(links) == 5:
                 if int(links[3].text) > int(links[1].text):
                     f.write('0')  # loss
                 else:
