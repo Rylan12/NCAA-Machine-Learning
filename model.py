@@ -12,7 +12,7 @@ from sklearn import linear_model as lm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
-from sklearn.preprocessing import scale, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 pd.set_option('display.width', 100)
 pd.set_option('display.max_columns', 10)
@@ -29,13 +29,16 @@ if not sys.warnoptions:
     warnings.simplefilter('ignore', category=FutureWarning)
     warnings.simplefilter('ignore', category=DeprecationWarning)
     warnings.simplefilter('ignore', category=PendingDeprecationWarning)
+    # pd.options.mode.chained_assignment = None
 
 
-def get_columns():
+def get_columns(include_seed_type=True):
     # Open columns
     with open(_directory + 'columns.json', 'r') as column_file:
         columns = json.load(column_file)
 
+    if not include_seed_type:
+        columns.remove('SeedType')
     columns.remove('TopScore')
     columns.remove('BotScore')
     columns.remove('TopTOV')
@@ -62,7 +65,7 @@ def upset(probability, upset_cutoff=threshold):
     return round(probability + 0.5 - upset_cutoff)
 
 
-def format_data_frame(data, col_labels):
+def format_data_frame(data, col_labels, scaler=None):
     # don't scale SeedType
     if 'SeedType' in col_labels:
         col_labels.remove('SeedType')
@@ -71,17 +74,33 @@ def format_data_frame(data, col_labels):
             for column in data:
                 if data[column].dtype == 'int64':
                     data[column] = data[column].astype('float64')
-            data[col_labels] = scale(data[col_labels])
+            # data[col_labels] = scale(data[col_labels])
+            data[col_labels], scaler = scale_df(data[col_labels], scaler)
         col_labels.insert(0, 'SeedType')
     else:
-        data[col_labels] = scale(data[col_labels])
+        if len(col_labels) != 0:
+            # Convert data to floats
+            for column in data:
+                if data[column].dtype == 'int64':
+                    data[column] = data[column].astype('float64')
+            # data[col_labels] = scale(data[col_labels])
+        data[col_labels], scaler = scale_df(data[col_labels], scaler)
     # change SeedTypes to integers in case need to encode later
     data = data.replace(
         ['OneSixteen', 'TwoFifteen', 'ThreeFourteen',
          'FourThirteen', 'FiveTwelve', 'SixEleven',
          'SevenTen', 'EightNine'],
         [1, 2, 3, 4, 5, 6, 7, 8])
-    return data
+    return data, scaler
+
+
+def scale_df(data, scaler=None):
+    # set up scaler if not
+    if scaler is None:
+        scaler = StandardScaler()
+        scaler.fit(data)
+    data = scaler.transform(data)
+    return data, scaler
 
 
 def predict(year: int = current_tournament_year, model: str = 'model', new: bool = True, col_labels: list = None,
@@ -102,16 +121,15 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
     # Initialize Data
     data = pd.read_csv(_directory + ('./datafile.csv' if not matchup else './Matchup/matchup.csv'))
     current = pd.read_csv(
-        _directory + ('./current.csv' if not matchup else './Matchup/matchup.csv')) if current_year else data
+        _directory + ('./current.csv' if not matchup else './Matchup/matchup.csv')) if current_year else data.copy()
     # data = pd.read_csv('NCAA2001_2017.csv')
     # data_2018 = pd.read_csv('NCAA2018.csv')
     # data_2018['year'] = 2018
     # data = data.append(data_2018, sort=True)
     model_file_path = _directory + 'Models/' + model + '.pickle'
     try:
-        with open(model_file_path, 'rb') as _:
-            # new is False so algorithm will continue with existing model
-            pass
+        with open(model_file_path, 'rb') as model_file:
+            model, scaler, encoder = pickle.load(model_file)
     except FileNotFoundError:
         # new was False but algorithm was not found
         print('Model not found. Creating new model...')
@@ -134,19 +152,21 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
                 ]'''
         col_labels = get_columns()
 
-    data = format_data_frame(data, col_labels)
-    current = format_data_frame(current, col_labels)
+    data, scaler = format_data_frame(data, col_labels, None if new else scaler)
+    current, scaler = format_data_frame(current, col_labels, scaler)
 
     # current input set
-    if not current_year:
-        test = data.loc[data['year'] == year][col_labels]
-    else:
-        test = current[col_labels]
+    test = current if current_year else data
+    test = test.loc[test['year'] == year] if not matchup and not current_year else test
+    test = test[col_labels]
 
     # results to display
     results_columns = ['SeedType', 'TopSeed', 'BotSeed', 'Upset']
     # results_columns = ['TopSeed', 'BotSeed', 'Upset']
-    test_results = current.loc[current['year'] == year][results_columns]
+
+    # test_results = current.loc[current['year'] == year][results_columns]
+    test_results = current if matchup else current.loc[current['year'] == year]
+    test_results = test_results[results_columns]
 
     # Create or Retrieve Model
     # if creating new model
@@ -163,10 +183,11 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
 
         # have to one-hot the seeding type if that's in there
         if 'SeedType' in col_labels:
-            enc = OneHotEncoder(categorical_features=[0])  # must be first
-            train = enc.fit_transform(train).toarray()
-            test = enc.fit_transform(test).toarray()
+            encoder = OneHotEncoder(categorical_features=[0])  # must be first
+            train = encoder.fit_transform(train).toarray()
+            test = encoder.transform(test).toarray()
         else:
+            encoder = None
             train = train.as_matrix()
             test = test.as_matrix()
 
@@ -187,18 +208,13 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
         if not os.path.exists(_directory + 'Models/'):
             os.makedirs(_directory + 'Models')
         with open(model_file_path, 'wb') as model_file:
-            pickle.dump(model, model_file)
+            pickle.dump((model, scaler, encoder), model_file)
 
     # get model
     else:
-        # get model
-        with open(model_file_path, 'rb') as model_file:
-            model = pickle.load(model_file)
-
         # have to one-hot the seeding type if that's in there
         if 'SeedType' in col_labels:
-            enc = OneHotEncoder(categorical_features=[0])  # must be first
-            test = enc.fit_transform(test).toarray()
+            test = encoder.transform(test).toarray()
         else:
             test = test.as_matrix()
 
@@ -209,8 +225,8 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
     probability = []
     for i in range(len(predictions)):
         probability.append(predictions[i][1])  # second column is upset percentage
-    test_results['UpsetProbability'] = probability
-    test_results['Correct'] = test_results['Upset'] == upset(test_results['UpsetProbability'])
+    test_results.loc[:, 'UpsetProbability'] = probability
+    test_results.loc[:, 'Correct'] = test_results['Upset'] == upset(test_results['UpsetProbability'])
 
     # calculate total number correct
     test_results['Correct'].replace([True, False], [1, 0], inplace=True)
@@ -235,11 +251,12 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
         pass
 
     # output data
-    print('\n\nYear: %d\n' % year)
+    if not matchup:
+        print('\n\nYear: %d\n' % year)
     print(test_results)
-    test_results.to_csv(_directory + '2017thing.csv')
 
 
 if __name__ == '__main__':
     _directory = ''
-    predict(2018)
+    predict(2018, new=False)
+    predict(2018, new=False, matchup=True)
