@@ -163,7 +163,7 @@ def get_data_file(yearfile):
 
 
 if __name__ == '__main__':
-    current_year = 2020
+    current_year = 2019
 
     # Collect all necessary data files (only if needed)
     for i in range(2001, current_year + 1):

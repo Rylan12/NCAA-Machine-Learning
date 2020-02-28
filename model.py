@@ -19,7 +19,7 @@ pd.set_option('display.max_columns', 10)
 
 threshold = 0.5
 
-current_tournament_year = 2020
+current_tournament_year = 2019
 
 _directory = '/Users/rylanpolster/PycharmProjects/NCAA-Machine-Learning/'
 
@@ -161,7 +161,7 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
     test = test[col_labels]
 
     # results to display
-    results_columns = ['SeedType', 'TopSeed', 'BotSeed', 'Upset']
+    results_columns = ['year', 'SeedType', 'TopSeed', 'BotSeed', 'Upset']
     # results_columns = ['TopSeed', 'BotSeed', 'Upset']
 
     # test_results = current.loc[current['year'] == year][results_columns]
@@ -245,6 +245,7 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
     # add sum column + extra formatting
     test_results = test_results.append(num_correct, sort=True)
     test_results.replace(np.nan, '', inplace=True)
+    # test_results.sort_values(by=['UpsetProbability'])
 
     if current_year:
         # TODO: Format data frame for current year (remove correct, change upset to predicted upset
@@ -252,11 +253,15 @@ def predict(year: int = current_tournament_year, model: str = 'model', new: bool
 
     # output data
     if not matchup:
-        print('\n\nYear: %d\n' % year)
+        # print('\n\nYear: %d\n' % year)
+        print(f'\n\nYear: {year}' + ('. NO SEED' if 'SeedType' not in col_labels else ''))
     print(test_results)
+    test_results.to_csv('teams.csv')
 
 
 if __name__ == '__main__':
     _directory = ''
-    predict(2018, new=False)
-    predict(2018, new=False, matchup=True)
+    # predict(2018, col_labels=get_columns(False))
+    # predict(2019, matchup=True, new=False, col_labels=get_columns(False))
+    predict(current_year=True)  # , col_labels=get_columns(False))
+    # predict(i, col_labels=get_columns(False), new=True)
