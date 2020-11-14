@@ -52,7 +52,7 @@ def get_columns():
     return columns
 
 
-def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels: list = None,
+def predict(year: int = 2019, model: str = 'model', new: bool = True, col_labels: list = None,
             model_type: str = None) -> None:
     """
     Train machine learning model for use
@@ -142,6 +142,7 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
         # have to one-hot the seeding type if that's in there
         if 'SeedType' in col_labels:
             enc = OneHotEncoder(categorical_features=[0])  # must be first
+            # enc = OneHotEncoder(categories=[0])  # must be first
             train = enc.fit_transform(train).toarray()
             test = enc.fit_transform(test).toarray()
         else:
@@ -212,4 +213,4 @@ def predict(year: int = 2017, model: str = 'model', new: bool = True, col_labels
 
 
 if __name__ == '__main__':
-    predict(year=2018)
+    predict(year=2019)
